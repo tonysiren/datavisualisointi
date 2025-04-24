@@ -71,7 +71,7 @@ if df is not None and not df.empty:
     if df.empty:
         st.warning("Valitulla suodatuksella ei ole dataa! Kokeile toista valintaa.")
     else:
-        st.write("### Ensimmäiset rivit datasta:")
+        st.write("**Ensimmäiset rivit datasta**")
 
         # Näytetään data suomenkielisillä sarakeotsikoilla
         suomennokset = {
@@ -105,8 +105,12 @@ if df is not None and not df.empty:
             }
             df["Weekday"] = df["Weekday"].map(viikonpaivat)
 
-            top_departures = df["Departure station name"].value_counts().nlargest(10)
-            top_returns = df["Return station name"].value_counts().nlargest(10)
+            # Aseman määrän säätö
+            st.write("**Säädä näytettävien asemien määrää**")
+            station_count = st.slider("Näytettävien asemien määrä (10–50)", min_value=10, max_value=50, value=10)
+
+            top_departures = df["Departure station name"].value_counts().nlargest(station_count)
+            top_returns = df["Return station name"].value_counts().nlargest(station_count)
 
             df_departures = pd.DataFrame({"Station": top_departures.index, "Trips": top_departures.values})
             df_returns = pd.DataFrame({"Station": top_returns.index, "Trips": top_returns.values})
@@ -117,7 +121,7 @@ if df is not None and not df.empty:
             st.plotly_chart(fig_departures)
             st.plotly_chart(fig_returns)
 
-            avg_distance = df.groupby("Departure station name")["Covered distance (m)"].mean().nlargest(10)
+            avg_distance = df.groupby("Departure station name")["Covered distance (m)"].mean().nlargest(station_count)
             df_avg_distance = pd.DataFrame({"Station": avg_distance.index, "Avg Distance (m)": avg_distance.values})
 
             fig_avg_distance = px.bar(df_avg_distance, x="Station", y="Avg Distance (m)", 
@@ -138,4 +142,5 @@ if df is not None and not df.empty:
             st.error("CSV-tiedostosta puuttuu tarvittavia sarakkeita!")
 else:
     st.error("Dataa ei voitu ladata. Tarkista tiedosto tai URL!")
+
 
