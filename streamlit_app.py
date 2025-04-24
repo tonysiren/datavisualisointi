@@ -106,7 +106,7 @@ if df is not None and not df.empty:
             df["Weekday"] = df["Weekday"].map(viikonpaivat)
 
             # Aseman määrän säätö
-            st.write("**Säädä näytettävien asemien määrää**")
+            st.write("**Säädä näytettävien asemien määrää alla näkyvissä infograafeissa**")
             station_count = st.slider("Näytettävien asemien määrä (10–50)", min_value=10, max_value=50, value=10)
 
             top_departures = df["Departure station name"].value_counts().nlargest(station_count)
