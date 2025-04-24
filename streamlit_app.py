@@ -6,7 +6,6 @@ import datetime
 st.title("Datavisualisointi")
 st.divider()
 
-
 st.header("Tarkastele analyysiä Helsingin ja Espoon kaupunkipyörien käytöstä")
 
 st.write("Tämä sovellus käsittelee kaupunkipyöräasemien Origin-Destination (OD) -dataa, joka pitää sisällään tiedot yksittäisten matkojen lähtö- ja päätösasemista, lähtö- ja päätösajoista, pituuksista sekä kestoista. Oletusaineistona näytetään Huhtikuun 2021 dataa, jonka analyysit löytyvät alta.")
@@ -35,7 +34,7 @@ def load_data(url):
     return df
 
 # Käyttäjän vaihtoehto
-uploaded_file = st.file_uploader("Lataa CSV-tiedosto tai käytä valmista aineistoa", type="csv")
+uploaded_file = st.file_uploader("Lataa CSV-tiedosto tai käytä valmista aineistoa. Raahaa ja pudota tiedosto (Drag and drop) tai lataa tiedosto koneeltasi (Browse files).", type="csv")
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
@@ -62,10 +61,10 @@ if df is not None and not df.empty:
         selected_return = st.selectbox("Valitse paluuasema", ["Kaikki"] + unique_stations)
 
     df = df[(df["Departure"].dt.date >= start_date) & (df["Departure"].dt.date <= end_date)]
-    
+
     if selected_departure != "Kaikki":
         df = df[df["Departure station name"] == selected_departure]
-    
+
     if selected_return != "Kaikki":
         df = df[df["Return station name"] == selected_return]
 
@@ -73,31 +72,57 @@ if df is not None and not df.empty:
         st.warning("Valitulla suodatuksella ei ole dataa! Kokeile toista valintaa.")
     else:
         st.write("### Ensimmäiset rivit datasta:")
-        st.write(df.head())
+
+        # Näytetään data suomenkielisillä sarakeotsikoilla
+        suomennokset = {
+            "Departure": "Lähtöaika",
+            "Return": "Paluu",
+            "Departure station id": "Lähtöaseman tunnus",
+            "Departure station name": "Lähtöasema",
+            "Return station id": "Paluuaseman tunnus",
+            "Return station name": "Paluuasema",
+            "Covered distance (m)": "Matkan pituus (m)",
+            "Duration (sec.)": "Kesto (s)"
+        }
+
+        df_naytto = df[list(suomennokset.keys())].rename(columns=suomennokset)
+        st.write(df_naytto.head())
 
         required_columns = {"Departure", "Departure station name", "Return station name", "Covered distance (m)", "Duration (sec.)"}
         if required_columns.issubset(df.columns):
             df["Hour"] = df["Departure"].dt.hour
             df["Weekday"] = df["Departure"].dt.day_name()
 
+            # Viikonpäivien suomennos
+            viikonpaivat = {
+                "Monday": "Maanantai",
+                "Tuesday": "Tiistai",
+                "Wednesday": "Keskiviikko",
+                "Thursday": "Torstai",
+                "Friday": "Perjantai",
+                "Saturday": "Lauantai",
+                "Sunday": "Sunnuntai"
+            }
+            df["Weekday"] = df["Weekday"].map(viikonpaivat)
+
             top_departures = df["Departure station name"].value_counts().nlargest(10)
             top_returns = df["Return station name"].value_counts().nlargest(10)
-            
+
             df_departures = pd.DataFrame({"Station": top_departures.index, "Trips": top_departures.values})
             df_returns = pd.DataFrame({"Station": top_returns.index, "Trips": top_returns.values})
-            
-            fig_departures = px.bar(df_departures, x="Station", y="Trips", title="Suosituimmat lähtöasemat", text_auto=True)
-            fig_returns = px.bar(df_returns, x="Station", y="Trips", title="Suosituimmat palautusasemat", text_auto=True)
-            
+
+            fig_departures = px.bar(df_departures, x="Station", y="Trips", title="Suosituimmat lähtöasemat", text_auto=True, labels={"Station": "Asema", "Trips": "Matkat"})
+            fig_returns = px.bar(df_returns, x="Station", y="Trips", title="Suosituimmat palautusasemat", text_auto=True, labels={"Station": "Asema", "Trips": "Matkat"})
+
             st.plotly_chart(fig_departures)
             st.plotly_chart(fig_returns)
 
             avg_distance = df.groupby("Departure station name")["Covered distance (m)"].mean().nlargest(10)
             df_avg_distance = pd.DataFrame({"Station": avg_distance.index, "Avg Distance (m)": avg_distance.values})
-            
+
             fig_avg_distance = px.bar(df_avg_distance, x="Station", y="Avg Distance (m)", 
-                                      title="Keskimääräinen matkan pituus per lähtöasema", text_auto=True)
-            
+                                      title="Keskimääräinen matkan pituus per lähtöasema", text_auto=True, labels={"Station": "Asema", "Avg Distance (m)": "Keskimääräinen matkan pituus"})
+
             st.plotly_chart(fig_avg_distance)
 
             hourly_counts = df["Hour"].value_counts().sort_index()
@@ -113,3 +138,4 @@ if df is not None and not df.empty:
             st.error("CSV-tiedostosta puuttuu tarvittavia sarakkeita!")
 else:
     st.error("Dataa ei voitu ladata. Tarkista tiedosto tai URL!")
+
