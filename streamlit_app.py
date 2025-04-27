@@ -6,7 +6,7 @@ import datetime
 st.title("Datavisualisointi")
 st.divider()
 
-st.header("Tarkastele analyysiä Helsingin ja Espoon kaupunkipyörien käytöstä")
+st.header("Tarkastele analyysiä Helsingin ja Espoon kaupunkipyörien matkoista")
 
 st.write("Tämä sovellus käsittelee kaupunkipyöräasemien Origin-Destination (OD) -dataa, joka pitää sisällään tiedot yksittäisten matkojen lähtö- ja päätösasemista, lähtö- ja päätösajoista, pituuksista sekä kestoista. Oletusaineistona näytetään Huhtikuun 2021 dataa, jonka analyysit löytyvät alta.")
          
@@ -107,7 +107,7 @@ if df is not None and not df.empty:
 
             # Aseman määrän säätö
             st.write("**Säädä näytettävien asemien määrää alla näkyvissä infograafeissa**")
-            station_count = st.slider("Säädä näytettävien asemien määrä (10–50)", min_value=10, max_value=50, value=10)
+            station_count = st.slider("Asemien määrä säädettävissä (10–50)", min_value=10, max_value=50, value=10)
 
             top_departures = df["Departure station name"].value_counts().nlargest(station_count)
             top_returns = df["Return station name"].value_counts().nlargest(station_count)
